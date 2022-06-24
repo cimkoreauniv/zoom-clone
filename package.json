@@ -1,0 +1,17 @@
+{
+  "name": "zoom-clone",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cimkoreauniv/zoom-clone.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cimkoreauniv/zoom-clone/issues"
+  },
+  "homepage": "https://github.com/cimkoreauniv/zoom-clone#readme"
+}
