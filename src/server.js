@@ -1,7 +1,7 @@
 import http from "http";
-import SocketIO from "socket.io"
+import { Server } from "socket.io"
 import express from "express";
-
+import { instrument } from "@socket.io/admin-ui";
 const app = express();
 
 app.set("view engine", "pug");
@@ -14,8 +14,16 @@ app.get("/*", (req, res) => res.redirect("/"));
 const listener = () => console.log("Listening on http://localhost:3000");
 
 const httpServer = http.createServer(app);
-const wsServer = SocketIO(httpServer);
-console.log(wsServer.sockets.adapter.sids);
+const wsServer = new Server(httpServer, {
+    cors: {
+        origin: ["https://admin.socket.io"],
+        credentials: true
+    }
+});
+instrument(wsServer, {
+    auth: false
+});
+
 const publicRooms = () => {
     const { sockets: { adapter: { sids, rooms } } } = wsServer;
     const publicRooms = []
@@ -27,6 +35,9 @@ const publicRooms = () => {
     return publicRooms;
 }
 
+const countRoom = roomName => {
+    return wsServer.sockets.adapter.rooms.get(roomName)?.size;
+}
 wsServer.on("connection", (socket) => {
     socket.nickname = "noname";
     socket.onAny(event => {
@@ -35,11 +46,15 @@ wsServer.on("connection", (socket) => {
     socket.on("enter_room", (roomName, done) => {
         socket.join(roomName);
         done();
-        socket.to(roomName).emit("welcome", socket.nickname);
+        socket.to(roomName).emit("welcome", socket.nickname, countRoom(roomName));
+        wsServer.sockets.emit("room_change", publicRooms());
     });
-    socket.on("disconnecting", () => {
-        socket.rooms.forEach(room => socket.to(room).emit("bye", socket.nickname));
+    socket.on("disconnecting", () => {//about to disconnect, hasn't left its rooms yet
+        socket.rooms.forEach(room => socket.to(room).emit("bye", socket.nickname, countRoom(room) - 1));
     });
+    socket.on("disconnect", () => {
+        wsServer.sockets.emit("room_change", publicRooms());
+    })
     socket.on("new_message", (msg, roomName, done) => {
         socket.to(roomName).emit("new_message", `${socket.nickname}: ${msg}`);
         done();
@@ -47,6 +62,7 @@ wsServer.on("connection", (socket) => {
     socket.on("nickname", nickname => {
         socket.nickname = nickname;
     });
+    socket.emit("room_change", publicRooms());
 })
 /* const wss = new WebSocket.Server({ server });
 
