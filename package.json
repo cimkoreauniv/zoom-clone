@@ -15,7 +15,8 @@
   },
   "homepage": "https://github.com/cimkoreauniv/zoom-clone#readme",
   "scripts": {
-    "dev": "nodemon"
+    "dev": "nodemon",
+    "lt": "lt --port 3000"
   },
   "devDependencies": {
     "@babel/cli": "^7.17.10",
